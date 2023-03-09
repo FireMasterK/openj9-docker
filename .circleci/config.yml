@@ -1,0 +1,92 @@
+version: 2.1
+
+jobs:
+  arm64:
+    machine:
+      image: ubuntu-2004:current
+    resource_class: arm.large
+    steps:
+      - checkout
+      - run:
+          command: |
+            export DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain
+            docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+            docker build -t 1337kavin/openj9-19:latest-arm64 -f Dockerfile.arm .
+            docker push 1337kavin/openj9-19:latest-arm64
+  arm64-jre:
+    machine:
+      image: ubuntu-2004:current
+    resource_class: arm.large
+    steps:
+      - checkout
+      - run:
+          command: |
+            export DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain
+            docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+            docker build -t 1337kavin/openj9-19:latest-jre-arm64 -f Dockerfile.jre.arm .
+            docker push 1337kavin/openj9-19:latest-jre-arm64
+  amd64:
+    machine:
+      image: ubuntu-2004:current
+    resource_class: large
+    steps:
+      - checkout
+      - run:
+          command: |
+            export DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain
+            docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+            docker build -t 1337kavin/openj9-19:latest-amd64 .
+            docker push 1337kavin/openj9-19:latest-amd64
+  amd64-jre:
+    machine:
+      image: ubuntu-2004:current
+    resource_class: large
+    steps:
+      - checkout
+      - run:
+          command: |
+            export DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain
+            docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+            docker build -t 1337kavin/openj9-19:latest-jre-amd64 -f Dockerfile.jre .
+            docker push 1337kavin/openj9-19:latest-jre-amd64
+  push:
+    machine:
+      image: ubuntu-2004:current
+    resource_class: medium
+    steps:
+      - run:
+          command: |
+            docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+            docker manifest create 1337kavin/openj9-19:latest 1337kavin/openj9-19:latest-arm64 1337kavin/openj9-19:latest-amd64
+            docker manifest create 1337kavin/openj9-19:latest-jre 1337kavin/openj9-19:latest-jre-arm64 1337kavin/openj9-19:latest-jre-amd64
+            docker manifest push 1337kavin/openj9-19:latest
+            docker manifest push 1337kavin/openj9-19:latest-jre
+
+workflows:
+  build-docker:
+    jobs:
+      - arm64:
+          filters:
+            branches:
+              only: main
+      - arm64-jre:
+          filters:
+            branches:
+              only: main
+      - amd64:
+          filters:
+            branches:
+              only: main
+      - amd64-jre:
+          filters:
+            branches:
+              only: main
+      - push:
+          filters:
+            branches:
+              only: main
+          requires:
+            - arm64
+            - arm64-jre
+            - amd64
+            - amd64-jre
