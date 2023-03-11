@@ -92,7 +92,8 @@ RUN git clone --depth=1 https://github.com/ibmruntimes/openj9-openjdk-jdk19.git 
 WORKDIR /jdk/openj9-openjdk-jdk
 
 RUN bash configure --with-boot-jdk=/root/bootjdks/jdk18 && \
-    make JOBS=$(nproc) all
+    make JOBS=$(nproc) all && \
+    find /jdk/openj9-openjdk-jdk/build/ -name "*.debuginfo" -type f -delete
 
 FROM quay.io/centos/centos:stream9
 
